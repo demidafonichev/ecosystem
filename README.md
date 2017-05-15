@@ -1,7 +1,5 @@
 # Ecosystem  
 
-This project was my course work as part of team course work - **Software and hardware platform of a managed ecosystem**
-
 This web-service is for management software and hardware platform of a managed ecosystem.  
 You can plant something there, chose way of care and don't worry about watering your plant.  
 Platform will do it for you. It also can illuminate plant if you want to. Just add it to your care list.  
@@ -13,7 +11,6 @@ Platform will do it for you. It also can illuminate plant if you want to. Just a
 4. Delete your device
 5. Chose plant that is in your device
 6. Chose default way of care or create your own
-  
 
 ## Actions you can add to your way of care:
 ### 1. Watering  
