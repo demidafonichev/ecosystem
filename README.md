@@ -10,8 +10,9 @@ Platform will do it for you. It also can illuminate plant if you want to. Just a
 1. Register
 2. Authenticate
 3. Register you device
-4. Chose plant that is in your device
-5. Create your own way of care/change default
+4. Delete your device
+5. Chose plant that is in your device
+6. Chose default way of care or create your own
   
 
 ## Actions you can add to your way of care:
