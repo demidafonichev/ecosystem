@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+    {% block content %}
+        <div class="main">
+            <div class="container">
+                <div class="form-container">
+                    <div class="row">
+                        <div class="col-lg-4 col-lg-offset-4 col-md-6 col-md-offset-3">
+                            <div class="login-panel panel panel-default">
+                                <div class="panel-body">
+                                    <form method="post" action="{% url 'login' %}">
+                                        {% csrf_token %}
+                                        {% if form.errors %}
+                                            <p>Username and password didn't match</p>
+                                        {% endif %}
+                                        {% for field in form %}
+                                            <div class="form-group">
+                                                {{ field.label_tag }}
+                                                {{ field }}
+                                            </div>
+                                        {% endfor %}
+                                        <div class="center-wrapper">
+                                            <div class="wrap float-left">
+                                                <input class="btn btn-primary btn-sm" type="submit" value="Авторизоваться" />
+                                            </div>
+                                            <input type="hidden" name="next" value="{{ next }}" />
+                                            <a href="/accounts/register">Зарегистрироваться</a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endblock %}

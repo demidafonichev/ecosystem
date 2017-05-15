@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+    {% block content %}
+        <div class="wrapper">
+            <div class="container jum">
+                <div class="header clearfix">
+                    <nav>
+                        <ul class="nav nav-pills float-right">
+                            <li class="nav-item">
+                                <a class="nav-link" href="/accounts/logout">Выйти</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <h3 class="text-muted">{{ user.username }}</h3>
+                </div>
+
+                <hr/>
+
+                <div id="box-table">
+                    <table id="box-list">
+                    </table>
+                </div>
+
+                <div class="center-wrapper">
+                    <button class="btn btn-primary" id="add">+</button>
+                </div>
+
+                {% block model_content %}
+                    {% include "create_box.html"%}
+                {% endblock %}
+            </div>
+        </div>
+
+        <script>
+
+            let plants = [];
+            let boxs = [];
+            let create_is_watering_default;
+            let create_is_illumination_default;
+
+            function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = jQuery.trim(cookies[i]);
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            $.ajaxSetup({
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                beforeSend: function(xhr, settings) {
+                    if (!this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    }
+                }
+            });
+
+            $(document).ready(function() {
+                console.log('ready');
+                initBoxTable();
+
+                $.ajax({
+                    url: 'http://127.0.0.1:8000/box/get_plants/',
+                    type: 'GET',
+                    data: {},
+                    success: function(data) {
+                        console.log(data);
+                        for (let i in data.plants) {
+                            let plant = data.plants[i];
+                            let p = {
+                                id: parseInt(plant.id),
+                                name: plant.name,
+                                watering: plant.watering,
+                                illumination: plant.illumination,
+                            };
+                            console.log(p);
+                            plants.push(p);
+                            let dom = '<option value=' + p.id + '>' + p.name + '</option>';
+                            $('#create-plant-list').append(dom);
+                            $('#change-plant-list').append(dom);
+                        }
+                        $('#create-plant-list').val(1);
+                        $('#change-plant-list').val(1);
+                    },
+                    error: function(error) {
+                        console.log(error)
+                    }
+                });
+
+                $.ajax({
+                    url: 'http://127.0.0.1:8000/box/get_box_list/',
+                    type: 'GET',
+                    success: function(data) {
+                        console.log('boxs', data);
+                        for (let i in data.box_list) {
+                            let box = data.box_list[i];
+                            console.log(box);
+                            let b_wrapper = initBoxWrapper(box);
+                            boxs.push(box);
+                            $('#box-list').append(b_wrapper);
+                        }
+                    },
+                    error: function(data) {
+                        console.log(data);
+                    }
+                });
+            });
+
+            $('#add').click(function() {
+                let plant = $.grep(plants, function(e) {return e.id == 1})[0];
+                initBoxModelDependsOnPlant('create', plant.watering, plant.illumination);
+                create_is_watering_default = true;
+                create_is_illumination_default = true;
+                $('#create-box').modal();
+            });
+
+            function initBoxModelDependsOnPlant(id, waterings, illuminations) {
+                let watering_list_id = id == 'create' ? '#create-watering-list' : '#change-watering-list';
+                let illumination_list_id = id == 'create' ? '#create-illumination-list' : '#change-illumination-list'
+
+                initWateringList(waterings, watering_list_id);
+                initIlluminationList(illuminations, illumination_list_id);
+            }
+
+            function initWateringList(waterings, watering_list_id) {
+                $(watering_list_id).empty();
+                for (let i = 0; i < waterings.length; ++i) {
+                    let watering = waterings[i];
+                    let w_wrapper = initWateringWrapper(watering.start_time,
+                                                        watering.volume,
+                                                        watering.frequency);
+                    $(watering_list_id).append(w_wrapper);
+                }
+            }
+
+            function initWateringWrapper(start_time, volume, frequency) {
+                let w_wrapper = $('<div>');
+                let w_start_dom = $('<select>', {id: "start", class: 'select-col'});
+                for (let j = 0; j < 24; ++j) {
+                    let time = $('<option>', {value: j, text: j.toString() + ':00'});
+                    w_start_dom.append(time);
+                }
+                w_start_dom.val(start_time);
+                w_start_dom.change(function() {
+                    create_is_watering_default = false;
+                });
+                w_wrapper.append(w_start_dom);
+
+                let w_volume_dom = $('<select>', {id: "volume", class: 'select-col'});
+                for (let j = 50; j < 1000; j += 50) {
+                    let volume = $('<option>', {value: j, text: j.toString() + 'ml'});
+                    w_volume_dom.append(volume);
+                }
+                w_volume_dom.val(volume);
+                w_volume_dom.change(function() {
+                    create_is_watering_default = false;
+                });
+                w_wrapper.append(w_volume_dom);
+
+                let w_frequency_dom = $('<select>', {id: "frequency", class: 'select-col'});
+                w_frequency_dom.append($('<option>', {value: 'Каждый день', text: 'Каждый день'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждые 2 дня', text: 'Каждые 2 дня'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждые 3 дня', text: 'Каждые 3 дня'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждые 4 дня', text: 'Каждые 4 дня'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждые 5 дней', text: 'Каждые 5 дней'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждые 6 дней', text: 'Каждые 6 дней'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждую неделю', text: 'Каждую неделю'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждые 2 недели', text: 'Каждые 2 недели'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждые 3 недели', text: 'Каждые 3 недели'}));
+                w_frequency_dom.append($('<option>', {value: 'Каждый месяц', text: 'Каждный месяц'}));
+                w_frequency_dom.val(frequency);
+                w_frequency_dom.change(function() {
+                    create_is_watering_default = false;
+                });
+                w_wrapper.append(w_frequency_dom);
+
+                let w_delete = $('<button>', {text: 'x', class: 'btn btn-danger'});
+                w_delete.click(function() {
+                    create_is_watering_default = false;
+                    w_wrapper.remove();
+                });
+                w_wrapper.append(w_delete);
+
+                return w_wrapper;
+            }
+
+            function initIlluminationList(illuminations, illumination_list_id) {
+                $(illumination_list_id).empty();
+                for (let i = 0; i < illuminations.length; ++i) {
+                    let illumination = illuminations[i];
+                    let i_wrapper = initIlluminationWrapper(illumination.start_time,
+                                                            illumination.duration,
+                                                            illumination.frequency);
+                    $(illumination_list_id).append(i_wrapper);
+                }
+            }
+
+            function initIlluminationWrapper(start_time, duration, frequency) {
+                let i_wrapper = $('<div>');
+                let i_start_dom = $('<select>', {id: "start", class: 'select-col'});
+                for (let j = 0; j < 24; ++j) {
+                    let time = $('<option>', {value: j, text: j.toString() + ':00'});
+                    i_start_dom.append(time);
+                }
+                i_start_dom.val(start_time);
+                i_start_dom.change(function() {
+                    create_is_illumination_default = false;
+                });
+                i_wrapper.append(i_start_dom);
+
+                let i_duration_dom = $('<select>', {id: "duration", class: 'select-col'});
+                for (let j = 0; j < 24; ++j) {
+                    let time = $('<option>', {value: j, text: j.toString() + 'h'});
+                    i_duration_dom.append(time);
+                }
+                i_duration_dom.val(duration);
+                i_duration_dom.change(function() {
+                    create_is_illumination_default = false;
+                });
+                i_wrapper.append(i_duration_dom);
+
+                let i_frequency_dom = $('<select>', {id: "frequency", class: 'select-col'});
+                i_frequency_dom.append($('<option>', {value: 'Каждый день', text: 'Каждый день'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждые 2 дня', text: 'Каждые 2 дня'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждые 3 дня', text: 'Каждые 3 дня'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждые 4 дня', text: 'Каждые 4 дня'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждые 5 дней', text: 'Каждые 5 дней'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждые 6 дней', text: 'Каждые 6 дней'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждую неделю', text: 'Каждую неделю'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждые 2 недели', text: 'Каждые 2 недели'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждые 3 недели', text: 'Каждые 3 недели'}));
+                i_frequency_dom.append($('<option>', {value: 'Каждый месяц', text: 'Каждый месяц'}));
+                i_frequency_dom.val(frequency);
+                i_frequency_dom.change(function() {
+                    create_is_illumination_default = false;
+                });
+                i_wrapper.append(i_frequency_dom);
+
+                let i_delete = $('<button>', {text: 'x', class: 'btn btn-danger'});
+                i_delete.click(function() {
+                    create_is_illumination_default = false;
+                    i_wrapper.remove();
+                });
+                i_wrapper.append(i_delete);
+
+                return i_wrapper;
+            }
+
+            function initBoxWrapper(box) {
+                let b_wrapper = $('<tr>');
+
+                let name_wrapper = $('<td>', {text: box.name});
+                let plant_name = $.grep(plants, function(e) {return parseInt(e.id) == parseInt(box.plant)})[0].name;
+                let plant_wrapper = $('<td>', {text: plant_name});
+                let box_status = box.status ? 'Подлючено' : 'Отключено';
+                let status_wraper = $('<td>', {text: box_status});
+                let temperature = box.temperature == '-1.' ? '-' : box.temperature;
+                let temperature_wrapper = $('<td>', {text: temperature});
+                let air_humidity = box.air_humidity == '-1.' ? '-' : box.air_humidity;
+                let air_humidity_wrapper = $('<td>', {text: air_humidity});
+                let soil_humidity = box.soil_humidity == '-1.' ? '-' : box.soil_humidity;
+                let soil_humidity_wrapper = $('<td>', {text: soil_humidity});
+
+                b_wrapper.append(name_wrapper);
+                b_wrapper.append(plant_wrapper);
+                b_wrapper.append(status_wraper);
+                b_wrapper.append(temperature_wrapper);
+                b_wrapper.append(air_humidity_wrapper);
+                b_wrapper.append(soil_humidity_wrapper);
+
+                b_wrapper.click(function() {
+                    initBoxModelDependsOnPlant('change', box.waterings, box.illuminations);
+                    document.getElementById('change-box-name').value = box.name;
+                    document.getElementById('change-plant-list').value = box.plant;
+
+                    $('#change').click(function() {
+                        let name = $('#change-box-name').val();
+                        let plant = $('#change-plant-list').val();
+                        let waterings = getWateringsFromModel('#change-watering-list');
+                        let illuminations = getIlluminationsFromModel('#change-illumination-list');
+                        let collision = false;
+                        for (let i = 0; i < illuminations.length; ++i) {
+                            for (let j = 0; j < illuminations.length; ++j) {
+                                if (parseInt(i) != parseInt(j)) {
+                                    if (parseInt(illuminations[i].start) >= parseInt(illuminations[j].start) &&
+                                        parseInt(illuminations[i].start) <= parseInt(illuminations[j].start) + parseInt(illuminations[j].duration)) {
+                                        alert('Сеансы освещения пересекаются');
+                                        collision = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (collision) {
+                                break;
+                            }
+                        }
+                        if (!collision) {
+                            box.name = name;
+                            box.plant = plant;
+                            box.waterings = waterings;
+                            box.illuminations = illuminations;
+
+                            $('#box-list').empty();
+                            initBoxTable();
+                            console.log(boxs);
+                            for (let i in boxs) {
+                                let nbox = boxs[i];
+                                let b_wrapper = initBoxWrapper(nbox);
+                                $('#box-list').append(b_wrapper);
+                            }
+
+                            let data = JSON.stringify({
+                                'id': box.id,
+                                'name': name,
+                                'plant': plant,
+                                'waterings': waterings,
+                                'illuminations': illuminations
+                            });
+                            $.ajax({
+                                url: 'http://127.0.0.1:8000/box/change_box/',
+                                type: 'POST',
+                                data: data,
+                                success: function(data) {
+                                    alert('Изменения сохранены');
+                                    $('#change-box').modal('hide');
+                                },
+                                error: function(data) {
+                                    alert('error');
+                                }
+                            });
+                        }
+                    });
+
+                    $('#delete').click(function() {
+                        $.ajax({
+                            url: 'http://127.0.0.1:8000/box/delete_box/',
+                            type: 'POST',
+                            data: JSON.stringify({'id': box.id}),
+                            success: function(data) {
+                                $('#change-box').modal('hide');
+                                let idx = boxs.indexOf(box);
+                                boxs.splice(idx);
+                                b_wrapper.remove();
+                            },
+                            error: function(data) {
+                                console.log('error');
+                            }
+                        })
+                    });
+
+                    $('#change-box').modal();
+                });
+
+                return b_wrapper;
+            }
+
+            function initBoxTable() {
+                $('#box-list').append(
+                    '<tr class="table-header">' +
+                        '<td>Устройство</td>' +
+                        '<td>Растение</td>' +
+                        '<td>Статус</td>' +
+                        '<td>Температура</td>' +
+                        '<td>Влажность воздуха</td>' +
+                        '<td>Влажность почвы</td>' +
+                    '</tr>')
+            }
+        </script>
+
+    {% endblock %}

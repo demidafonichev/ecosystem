@@ -1,0 +1,226 @@
+{% block model_content %}
+    <div class="modal fade" tabindex="-1" role="dialog" id="create-box">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content" id="create-box-form">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div class="center-wrapper">
+                        <h4 class="modal-title">Добавить устройство</h4>
+                    </div>
+                </div>
+
+                <div class="input-wrapper">
+                    <div>
+                        <label for="create-box-name">Название</label>
+                        <input type="text" name="create-box-name" id="create-box-name">
+                    </div>
+
+                    <div id="create-key-input" class="key-input">
+                        <label for="create-key" class="key">Ключ</label>
+                        <input type="text" name="create-key" id="create-key">
+                    </div>
+
+                    <div id="create-plant-input" class="plant-input">
+                        <label for="create-plant-list" class="plant">Растение</label>
+                        <select id="create-plant-list"></select>
+                    </div>
+                </div>
+
+                <hr />
+                <p>Полив</p>
+                <div class="center-wrapper">
+                    <div id="create-watering-section">
+                        <div id="create-watering-list">
+                        </div>
+                        <button id="create-add-watering" class="btn btn-primary add-btn">+</button>
+                    </div>
+                </div>
+                <hr />
+                <p>Освещение</p>
+                <div class="center-wrapper">
+                    <div id="create-illumination-section">
+                        <div id="create-illumination-list">
+                        </div>
+                        <button id="create-add-illumination" class="btn btn-primary add-btn">+</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="create" >Добавить</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="change-box">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content" id="change-box-form">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div class="center-wrapper">
+                        <h4 class="modal-title">Параметры</h4>
+                    </div>
+                </div>
+
+
+                <div class="input-wrapper">
+                    <div>
+                        <label for="change-box-name">Название</label>
+                        <input aria-label="Название" type="text" name="change-box-name" id="change-box-name" class="input">
+                    </div>
+
+                    <div id="change-plant-input" class="plant-input">
+                        <label for="change-plant-list" class="plant">Растение</label>
+                        <select id="change-plant-list"></select>
+                    </div>
+                </div>
+
+                <p>Полив</p>
+                <div class="center-wrapper">
+                    <div id="change-watering-section">
+                        <div id="change-watering-list">
+                        </div>
+                        <button id="change-add-watering" class="btn btn-primary add-btn">+</button>
+                    </div>
+                </div>
+                <hr />
+                <p>Освещение</p>
+                <div class="center-wrapper">
+                    <div id="change-illumination-section">
+                        <div id="change-illumination-list">
+                        </div>
+                        <button id="change-add-illumination" class="btn btn-primary add-btn">+</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="delete" >Удалить</button>
+                    <button type="button" class="btn btn-primary" id="change" >Сохранить</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <script>
+
+        $('#create').click(function() {
+            console.log('on model create click');
+            let name = $('#create-box-name').val();
+            let key = $('#create-key').val();
+            let plant = $('#create-plant-list').val();
+            let waterings = getWateringsFromModel('#create-watering-list');
+            let illuminations = getIlluminationsFromModel('#create-illumination-list');
+
+            let key_data = JSON.stringify({'name': name, 'key': key});
+            let all_data = JSON.stringify({
+                'key': key,
+                'name': name,
+                'plant': plant,
+                'is_watering_default': create_is_watering_default,
+                'is_illumination_default': create_is_illumination_default,
+                'waterings': waterings,
+                'illuminations': illuminations
+            });
+            $.ajax({
+                url: 'http://127.0.0.1:8000/box/check_key_and_name/',
+                type: 'POST',
+                data: key_data,
+                success: function (data) {
+                    $.ajax({
+                        url: 'http://127.0.0.1:8000/box/save_box/',
+                        type: 'POST',
+                        data: all_data,
+                        success: function (data) {
+                            $('#create-box').modal('hide');
+                            let box_id = data.id;
+                            let box = {
+                                id: parseInt(box_id),
+                                name: name,
+                                plant: parseInt(plant),
+                                temperature: '-1.',
+                                air_humidity: '-1.',
+                                soil_humidity: '-1.',
+                                status: false,
+                                waterings: waterings,
+                                illuminations: illuminations
+                            };
+                            boxs.push(box);
+                            let b_wrapper = initBoxWrapper(box);
+                            $('#box-list').append(b_wrapper);
+                        },
+                        error: function (data) {
+                            console.log('error');
+                        }
+                    })
+                },
+                error: function (data) {
+                    console.log('error');
+                }
+            })
+        });
+
+        $('#create-add-watering').click(function() {
+            create_is_watering_default = false;
+            let new_w_wrapper = initWateringWrapper('0', '100', 'Каждый день');
+            $('#create-watering-list').append(new_w_wrapper);
+        });
+
+        $('#create-add-illumination').click(function() {
+            create_is_illumination_default = false;
+            let new_i_wrapper = initIlluminationWrapper('7', '1', 'Каждый день');
+            $('#create-illumination-list').append(new_i_wrapper);
+        });
+
+        $('#change-add-watering').click(function() {
+            create_is_watering_default = false;
+            let new_w_wrapper = initWateringWrapper('0', '100', 'Каждый день');
+            $('#change-watering-list').append(new_w_wrapper);
+        });
+
+        $('#change-add-illumination').click(function() {
+            create_is_illumination_default = false;
+            let new_i_wrapper = initIlluminationWrapper('7', '1', 'Каждый день');
+            $('#change-illumination-list').append(new_i_wrapper);
+        });
+
+        $('#create-plant-list').change(function() {
+            let plant = $.grep(plants, function(e) {return e.id == $('#create-plant-list').val()})[0];
+            initBoxModelDependsOnPlant('create', plant.watering, plant.illumination);
+        });
+
+        function getWateringsFromModel(id) {
+            let waterings = [];
+            let user_waterings = $(id).children();
+            for (let i=0; i < user_waterings.length; ++i) {
+                let watering = user_waterings[i];
+                let watering_settings = watering.children;
+                let new_w = {
+                    start_time: watering_settings[0].value,
+                    volume: watering_settings[1].value,
+                    frequency: watering_settings[2].value
+                };
+                waterings.push(new_w);
+            }
+
+            return waterings;
+        }
+
+        function getIlluminationsFromModel(id) {
+            let illuminations = [];
+            let user_illuminations = $(id).children();
+            for (let i=0; i < user_illuminations.length; ++i) {
+                let illumination = user_illuminations[i];
+                let illumination_settings = illumination.children;
+                let new_i = {
+                    start_time: illumination_settings[0].value,
+                    duration: illumination_settings[1].value,
+                    frequency: illumination_settings[2].value,
+                };
+                illuminations.push(new_i);
+            }
+
+            return illuminations;
+        }
+    </script>
+{% endblock %}

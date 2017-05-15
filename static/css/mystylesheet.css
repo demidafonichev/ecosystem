@@ -1,0 +1,123 @@
+.form-container {
+    margin-top: 35%;
+    margin-bottom: 30%;
+}
+
+.main {
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('../images/main.jpg');
+}
+
+.center-text {
+    text-align: center;
+}
+
+.float-right {
+    float: right !important;
+}
+
+.wrapper {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+.wrap {
+    margin-bottom: 5px;
+}
+
+.jum {
+    max-width: 72rem;
+}
+
+.center-wrapper {
+    text-align: center;
+}
+
+h3 {
+    vertical-align: middle;
+    margin-top: 8px;
+    margin-bottom: 0px;
+    height: 100%;
+}
+
+td {
+    text-align: center;
+    padding: 8px;
+}
+
+tr:hover {
+    background-color: #eceeef;
+}
+
+.table-header {
+    background-color: #2e6da4;
+    color: #ffffff;
+}
+
+.table-header:hover {
+    background-color: #2e6da4;
+}
+
+.table-header > td {
+    padding: 12px;
+}
+
+table {
+    width: 100%;
+    -moz-box-shadow: 0 0 5px #ccc;
+    -webkit-box-shadow: 0 0 5px #ccc;
+    box-shadow: 0 0 3px #ccc;
+    margin-bottom: 15px;
+}
+
+.modal-dialog {
+    min-width: 370px;
+    width: 20%;
+}
+
+p {
+    font-weight: bold;
+    margin: 8px;
+}
+
+.plant {
+    padding-right: 4px;
+}
+
+.plant-input {
+    padding-top: 5px;
+}
+
+.key-input {
+    padding-top: 5px;
+}
+
+.key {
+    padding-right: 28px;
+}
+
+.input-wrapper {
+    padding: 8px;
+}
+
+hr {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.select-col {
+    margin-right: 5px;
+}
+
+#create-watering-list, #create-illumination-list,
+#change-watering-list, #change-illumination-list {
+    margin-left: 10px;
+}
+
+.btn {
+    height: 32px !important;
+}
+
+.add-btn {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
