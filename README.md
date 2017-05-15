@@ -16,7 +16,7 @@ Each watering session describes by 3 values:
 ### 2. Illumination  
 Each illumination session describes by 3 values:
 1. Session start time - 00:00 - 23:00 with step of 1 hour
-2. Session duration - 1hour - 23 hour with step of 1 hour
+2. Session duration - 1 hour - 23 hour with step of 1 hour
 3. Session frequency - 1 day - 1 month
 
 You can have as much both watering and illumination sessions as you want
