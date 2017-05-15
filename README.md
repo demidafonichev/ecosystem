@@ -26,3 +26,7 @@ Each illumination session is described by 3 values:
 3. Session frequency - 1 day - 1 month
 
 You can have as much both watering and illumination sessions as you want
+
+## Possible ways of development:
+1. Add disposable sessions
+2. Add fertilize session type
