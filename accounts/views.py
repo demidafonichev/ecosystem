@@ -16,17 +16,14 @@ def register(request):
         form = UserRegistrationForm(request.POST)
         print(form)
         if form.is_valid():
-            print('valid')
             user = form.save()
             user = authenticate(username=form.cleaned_data['username'],
                                 password=form.cleaned_data['password1'])
             login(request, user)
             return HttpResponseRedirect('profile/')
 
-    print('invalid')
     token = {}
     token.update(csrf(request))
     token['form'] = UserRegistrationForm()
-    print(token)
 
     return render(request, 'register.html', token)

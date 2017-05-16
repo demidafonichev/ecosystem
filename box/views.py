@@ -7,6 +7,16 @@ from .models import Box, Plant, Watering, Illumination, CareMethod
 
 
 def get_plants(request):
+    """
+    Returns json-object describes plant list as list of objects in format
+    id: plant id
+    name: plant name
+    watering: plant watering default list
+    illumination: plant illumination default list
+
+    :param request: client request
+    :return: http response with plant list as content
+    """
     plants = []
     for plant in Plant.objects.all():
         waterings = Watering.objects.filter(care_method=plant.care)
@@ -29,8 +39,75 @@ def get_plants(request):
                         content_type="application/json")
 
 
+def get_box_list(request):
+    """
+    Returns json-object describes box list as list of objects in format
+    id: box id
+    name: box name
+    plant: plant object, see above
+    temperature: air temperature in box
+    air_humidity: air humidity in box
+    soil_humidity: soil humidity in box
+
+    :param request: client request
+    :return: http response with box list as content
+    """
+    user = User.objects.get(username=request.user.username)
+    box_list = Box.objects.filter(owner=user)
+
+    response_data = []
+    for box in box_list:
+        waterings = []
+        try:
+            for watering in Watering.objects.filter(care_method=Box.objects.get(pk=box.id).care):
+                waterings.append({
+                    'start_time': watering.watering_start_time,
+                    'volume': watering.watering_volume,
+                    'frequency': watering.watering_frequency
+                })
+        except Watering.DoesNotExist:
+            pass
+
+        illuminations = []
+        try:
+            for illumination in Illumination.objects.filter(care_method=Box.objects.get(pk=box.id).care):
+                illuminations.append({
+                    'start_time': illumination.illumination_start_time,
+                    'duration': illumination.illumination_duration_time,
+                    'frequency': illumination.illumination_frequency
+                })
+        except Illumination.DoesNotExist:
+            pass
+
+        response_data.append({
+            'id': box.id,
+            'name': box.name,
+            'plant': Plant.objects.get(name=box.plant).id,
+            'temperature': box.temperature,
+            'air_humidity': box.air_humidity,
+            'soil_humidity': box.air_humidity,
+            'status': box.status,
+            'waterings': waterings,
+            'illuminations': illuminations
+        })
+
+    return HttpResponse(status=status.HTTP_200_OK,
+                        content=json.dumps({'box_list': response_data}),
+                        content_type="application/json")
+
+
 def check_key_and_name(request):
+    """
+    Checks box special key and box name for validness
+    special key is valid if exists box with that special key
+    box is valid if it was not registered yet
+    name is valid if user has no boxes with that name
+
+    :param request:
+    :return: http response with list of values statuses
+    """
     data = json.loads(request.body.decode('utf-8'))
+    print(data)
     user = User.objects.get(username=request.user.username)
     key = data['key']
     name = data['name']
@@ -49,7 +126,7 @@ def check_key_and_name(request):
                 user_box_list = Box.objects.filter(owner=user)
                 for box in user_box_list:
                     if box.name == name:
-                        response_data['name'] = 'Registered</nav>'
+                        response_data['name'] = 'Registered'
                         ok = False
                 else:
                     response_data['name'] = 'OK'
@@ -70,6 +147,13 @@ def check_key_and_name(request):
 
 
 def save_box(request):
+    """
+    Saves box in data base as registered, with request.user.username as owner,
+    chosen plant and way of care for this plant
+
+    :param request: client request
+    :return: http response with registered box id
+    """
     data = json.loads(request.body.decode('utf-8'))
 
     plant = data['plant']
@@ -116,52 +200,14 @@ def save_box(request):
                         content_type="application/json")
 
 
-def get_box_list(request):
-    user = User.objects.get(username=request.user.username)
-    box_list = Box.objects.filter(owner=user)
-
-    response_data = []
-    for box in box_list:
-        waterings = []
-        try:
-            for watering in Watering.objects.filter(care_method=Box.objects.get(pk=box.id).care):
-                waterings.append({
-                    'start_time': watering.watering_start_time,
-                    'volume': watering.watering_volume,
-                    'frequency': watering.watering_frequency
-                })
-        except Watering.DoesNotExist:
-            pass
-
-        illuminations = []
-        try:
-            for illumination in Illumination.objects.filter(care_method=Box.objects.get(pk=box.id).care):
-                illuminations.append({
-                    'start_time': illumination.illumination_start_time,
-                    'duration': illumination.illumination_duration_time,
-                    'frequency': illumination.illumination_frequency
-                })
-        except Illumination.DoesNotExist:
-            pass
-
-        response_data.append({
-            'id': box.id,
-            'name': box.name,
-            'plant': Plant.objects.get(name=box.plant).id,
-            'temperature': box.temperature,
-            'air_humidity': box.air_humidity,
-            'soil_humidity': box.air_humidity,
-            'status': box.status,
-            'waterings': waterings,
-            'illuminations': illuminations
-        })
-
-    return HttpResponse(status=status.HTTP_200_OK,
-                        content=json.dumps({'box_list': response_data}),
-                        content_type="application/json")
-
-
 def change_box(request):
+    """
+    Saves new box data to data base
+    Updates box name, plant, watering and illumination lists
+
+    :param request:
+    :return: http response with empty content
+    """
     data = json.loads(request.body.decode('utf-8'))
 
     box_id = data['id']
@@ -199,6 +245,12 @@ def change_box(request):
 
 
 def delete_box(request):
+    """
+    Saves box in data base as unregistered, with None as owner, way of care
+
+    :param request: client request
+    :return: http response with empty content
+    """
     data = json.loads(request.body.decode('utf-8'))
 
     box_id = data['id']
